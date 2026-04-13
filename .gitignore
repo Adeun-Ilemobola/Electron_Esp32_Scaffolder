@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# JetBrains / editor
+.idea/
+*.iml
+.DS_Store
+
+# Electron template junk you should not commit
+templates/Command_Center_App/node_modules/
+templates/Command_Center_App/build/
+templates/Command_Center_App/out/
+
+# PlatformIO
+templates/esp32/.pio/
+templates/esp32/.vscode/
+
+# General
+.env
