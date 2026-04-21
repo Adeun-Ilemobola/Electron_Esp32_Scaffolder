@@ -68,64 +68,7 @@ function App(): React.JSX.Element {
             setConnectedPath={setConnectedPath}
           />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Hardware Controls</CardTitle>
-                <CardDescription>
-                  Send commands to the connected ESP32.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant={connectedPath ? "default" : "secondary"}>
-                    {connectedPath ? "Connected" : "Disconnected"}
-                  </Badge>
 
-                  <Badge
-                    variant="outline"
-                    className={isLedOn ? "border-green-500 text-green-500" : ""}
-                  >
-                    {isLedOn ? "LED ON" : "LED OFF"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    Active device
-                  </div>
-                  <div className="rounded-md border p-3 text-sm">
-                    {connectedPath ?? "No device selected"}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    Device readiness
-                  </div>
-                  <Progress value={connectedPath ? 100 : 0} />
-                </div>
-
-                <Button onClick={toggleLed} disabled={!connectedPath}>
-                  Toggle ESP32 LED
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Serial Monitor</CardTitle>
-                <CardDescription>
-                  Last message received from the device.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <pre className="min-h-40 rounded-md border bg-muted p-4 text-sm whitespace-pre-wrap break-words">
-                  {lastSerialMessage}
-                </pre>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
 
         <TabsContent value="playground" className="space-y-6">

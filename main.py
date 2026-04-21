@@ -192,8 +192,8 @@ class ScaffoldEngine:
             raise NotADirectoryError(f"Destination is not a folder: {root}")
 
         project_root = root / spec.project_slug
-        ui_target = project_root / "Command_Center_App"
-        esp32_target = project_root / "esp32"
+        ui_target = project_root / f'UI_{spec.name}'
+        esp32_target = project_root / f"esp_{spec.name}"
         meta_dir = project_root / ".scaffold"
 
         if project_root.exists():
@@ -202,6 +202,27 @@ class ScaffoldEngine:
         project_root.mkdir(parents=True, exist_ok=False)
 
         shutil.copytree(self.ui_template_dir, ui_target)
+        # make the package.json  name key  value  change
+        package_json = ui_target / "package.json"
+        if package_json.exists():
+            with open(package_json, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["name"] = f"UI_{spec.name}"
+            with open(package_json, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        #update electron-builder.yml with new name
+        electron_builder_yml = ui_target / "electron-builder.yml"
+        if electron_builder_yml.exists():
+            with open(electron_builder_yml, "r", encoding="utf-8") as f:
+                content = f.read()
+                if re.search(r"productName: .+", content):
+                    content = re.sub(r"productName: .+", f"productName: {spec.name}", content)
+                
+            with open(electron_builder_yml, "w", encoding="utf-8") as f:
+                f.write(content)
+        
+
+
         shutil.copytree(self.esp32_template_dir, esp32_target)
 
         self._clean_ui_template(ui_target)

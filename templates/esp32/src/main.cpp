@@ -10,6 +10,35 @@ Btu *button = nullptr; // Assuming the button is connected to pin 0
 
 
 
+template <typename T>
+void SendEvent(const char *event, std::map<String, T> state)
+{
+  // Note: Use a larger buffer if you expect many sensors
+  StaticJsonDocument<400> doc;
+  doc["event"] = event;
+
+  // Create a nested object for the "data" or "state"
+  JsonObject data = doc.createNestedObject("state");
+
+  for (const auto &kv : state)
+  {
+    data[kv.first] = kv.second;
+  }
+
+  serializeJson(doc, Serial);
+  Serial.println();
+}
+
+void sendLog(const String &message)
+{
+  StaticJsonDocument<768> doc;
+  doc["event"] = "log";
+  doc["message"] = message;
+  serializeJson(doc, Serial);
+  Serial.println();
+}
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -23,22 +52,7 @@ void setup() {
 }
 
 
-template <typename T>
-void SendEvent(const char* event, std::map<String, T> state) {
-    // Note: Use a larger buffer if you expect many sensors
-    StaticJsonDocument<400> doc;
-    doc["event"] = event;
 
-    // Create a nested object for the "data" or "state"
-    JsonObject data = doc.createNestedObject("state");
-
-    for (const auto& kv : state) {
-        data[kv.first] = kv.second;
-    }
-
-    serializeJson(doc, Serial);
-    Serial.println();
-}
 
 void loop() {
 
@@ -55,7 +69,7 @@ void loop() {
   if (Serial.available()) {
     String incoming = Serial.readStringUntil('\n');
 
-    StaticJsonDocument<200> doc;
+    StaticJsonDocument<768> doc;
     DeserializationError error = deserializeJson(doc, incoming);
 
     if (!error) {
@@ -80,7 +94,10 @@ void loop() {
       }
 
 
-      }
+      }else
+    {
+      sendLog("JSON parse failed: " + String(error.c_str()));
+    }
 
 
 

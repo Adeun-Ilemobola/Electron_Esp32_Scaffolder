@@ -38,6 +38,7 @@ export default function FindConnect({
       const nowconnected = await window.api.autoConnect()
       if (nowconnected.ok && nowconnected.path) {
         setConnectedPath(nowconnected.path)
+        window.api.sendCommand({cmd: "re-register"})
       }
     } catch (error) {
       console.error("Failed to scan serial ports:", error)
@@ -51,17 +52,17 @@ export default function FindConnect({
     try {
       const result = await window.api.connectToPort(path)
 
+
       if (result.success) {
         setConnectedPath(path)
+        window.api.sendCommand({cmd: "re-register"})
       }
     } catch (error) {
       console.error("Failed to connect to device:", error)
     }
   }
 
-  React.useEffect(() => {
-    void scanPorts()
-  }, [])
+
 
   return (
     <Card>
