@@ -244,6 +244,9 @@ class ScaffoldEngine:
         with open(meta_dir / "project.json", "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
+        # for the UI cd and do bun install and for the 
+        subprocess.run(["bun", "install"], cwd=ui_target, check=True)
+
         return project_root
 
     def _safe_remove(self, target: Path) -> None:
