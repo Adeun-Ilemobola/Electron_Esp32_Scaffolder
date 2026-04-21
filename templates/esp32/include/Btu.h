@@ -3,6 +3,7 @@
 
 #pragma once
 #include <Arduino.h>
+#include "Types.h"
 class Btu
 {
 public:
@@ -13,6 +14,7 @@ public:
     bool isPressed() const;
     void sendEvent(bool isPressed) const;
    String getId() const { return id; }
+   void serializeSenderInfo(KindMode kind) const;
 
 
 private:

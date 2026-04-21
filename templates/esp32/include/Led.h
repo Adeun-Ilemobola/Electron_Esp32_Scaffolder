@@ -3,6 +3,7 @@
 
 #pragma once
 #include <Arduino.h>
+#include "Types.h"
 
 class Led
 {
@@ -15,12 +16,13 @@ public:
     bool setState(bool newState);
     void on();
     void off();
-    void sendEvent(bool isOn) const;
+    void sendEvent() const;
     String getId() const
     {
         return id;
     }
-
+    void serializeSenderInfo(KindMode kind) const;
+   
 private:
     int pin;
     bool state;

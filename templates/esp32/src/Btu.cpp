@@ -24,6 +24,7 @@ void Btu::setup(int pin, bool isPullUp)
     } else {
         pinMode(this->pin, INPUT);
     }
+        this->serializeSenderInfo(KindMode::REGISTER);
 }
 
 bool Btu::getState() const
@@ -35,11 +36,11 @@ void Btu::setState(bool newState) const
 {
      if (this->isPullUp) {
          this->state = digitalRead(this->pin) == LOW;
+         this->serializeSenderInfo(KindMode::STATE);
 
     } else {
          this->state = digitalRead(this->pin) == HIGH;
-
-
+         this->serializeSenderInfo(KindMode::STATE);
     }
 }
 
@@ -51,10 +52,17 @@ bool Btu::isPressed() const
 
 void Btu::sendEvent(bool isPressed) const
 {
-     StaticJsonDocument<400> doc;
-    doc["event"] = this->id;
-    doc["isPressed"] = isPressed;
+     this->serializeSenderInfo(KindMode::STATE);
+}
 
+void Btu::serializeSenderInfo(KindMode kind) const
+{
+    StaticJsonDocument<400> doc;
+    doc["kind"] = kindModeToString(kind);
+    doc["id"] = this->id;
+    doc["moduleType"] = "button";
+    JsonObject payloadObj = doc.createNestedObject("payload");
+    payloadObj["isPressed"] = this->state;
     serializeJson(doc, Serial);
     Serial.println();
 }

@@ -21,6 +21,8 @@ void Led::setup(int pin)
     this->state = false;
     pinMode(this->pin, OUTPUT);
     digitalWrite(this->pin, LOW); // Ensure it starts off
+
+    this->serializeSenderInfo(KindMode::REGISTER);
 }
 
 bool Led::getState() const
@@ -44,12 +46,19 @@ void Led::off()
 
 }
 
-void Led::sendEvent(bool isOn) const
+void Led::sendEvent() const
 {
-     StaticJsonDocument<400> doc;
-    doc["event"] = this->id;
-    doc["isOn"] = isOn;
+    this->serializeSenderInfo(KindMode::STATE);
+}
 
+void Led::serializeSenderInfo(KindMode kind) const
+{
+    StaticJsonDocument<500> doc;
+    doc["kind"] = kindModeToString(kind);
+    doc["id"] = this->id;
+    doc["moduleType"] = "led";
+    JsonObject payloadObj = doc.createNestedObject("payload");
+    payloadObj["state"] = this->state;
     serializeJson(doc, Serial);
     Serial.println();
 }
@@ -67,10 +76,10 @@ bool Led::setState(bool newState)
 {
     if (newState) {
         this->on();
-        this->sendEvent(this->state);
+        this->sendEvent();
     } else {
         this->off();
-        this->sendEvent(this->state);
+        this->sendEvent();
 
     }
     return this->state;

@@ -3,6 +3,7 @@
 #include <map>
 #include "Led.h"
 #include "Btu.h"
+#include "Types.h"
 const int LED_PIN = 12; // The built-in LED on most ESP32 boards
 bool isLedOn = false;
 std::map<String, Led*> leds; // Map to store LED objects by their pin number
@@ -73,7 +74,7 @@ void loop() {
     DeserializationError error = deserializeJson(doc, incoming);
 
     if (!error) {
-      const char* cmd = doc["cmd"];
+      const char* cmd = doc[kindModeToString(KindMode::COMMAND)];
       const char* targetId = doc["id"];
       /*
        {
