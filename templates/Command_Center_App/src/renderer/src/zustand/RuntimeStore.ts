@@ -37,7 +37,8 @@ export const useRuntimeStore = create<RuntimeStore>((set) => ({
           [id]: {
             ...current,
             payload: {
-              ...payloadObj
+              ...current.payload,
+              ...newPayload,
 
             },
           },
