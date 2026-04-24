@@ -4,14 +4,14 @@ type ModuleEntry = {
   id: string;
   moduleType: string;
   connected: boolean;
-  payload: Record<string, unknown>;
+  payload: Record<string, any>;
 };
 
 type RuntimeStore = {
   modules: Record<string, ModuleEntry>;
 
   registerModule: (module: ModuleEntry) => void;
-  patchModuleState: (id: string, patch: Record<string, unknown>) => void;
+  patchModuleState: (id: string, patch: Record<string, any>) => void;
   removeModule: (id: string) => void;
 };
 
