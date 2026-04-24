@@ -63,6 +63,7 @@ void Btu::serializeSenderInfo(KindMode kind) const
     doc["moduleType"] = "button";
     JsonObject payloadObj = doc.createNestedObject("payload");
     payloadObj["isPressed"] = this->state;
+
     serializeJson(doc, Serial);
     Serial.println();
 }

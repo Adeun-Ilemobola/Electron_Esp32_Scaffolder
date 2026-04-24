@@ -23,10 +23,10 @@ import {
 import { Activity, Boxes, Cpu, PlugZap, TerminalSquare } from "lucide-react"
 
 type IncomingPacket = {
-  kind?: number | string
-  id?: string
-  moduleType?: string
-  payload?: Record<string, unknown>
+  kind: string
+  id: string
+  moduleType: string
+  payload: Record<string, any>
 }
 
 function App(): React.JSX.Element {
@@ -75,19 +75,18 @@ function App(): React.JSX.Element {
         const kind = typeof data.kind === "string" ? data.kind.toLowerCase() : data.kind
 
         // REGISTER
-        if (kind === 0 || kind === "register") {
+        if (kind === "register") {
           registerModule({
             id: data.id,
             moduleType: data.moduleType,
             connected: true,
-            capabilities: data.payload ?? {},
-            state: data.payload ?? {},
+            payload: data.payload ?? {},
           })
           return
         }
 
         // STATE
-        if (kind === 1 || kind === "state") {
+        if (kind === "state") {
           const existing = modules[data.id]
 
           if (!existing) {
@@ -95,8 +94,7 @@ function App(): React.JSX.Element {
               id: data.id,
               moduleType: data.moduleType,
               connected: true,
-              capabilities: {},
-              state: data.payload ?? {},
+              payload: data.payload ?? {},
             })
             return
           }
@@ -108,6 +106,12 @@ function App(): React.JSX.Element {
         // REMOVE / DISCONNECT
         if (kind === "remove" || kind === "disconnect") {
           removeModule(data.id)
+        }
+        if (kind === "log") {
+          setLastSerialMessage(data.payload.message ?? "")
+          console.log(`[MODULE ${data.moduleType === "101 ?" ? "Log ?" : data.moduleType}]`, data.payload)
+
+
         }
       } catch (err) {
         console.error("[RENDERER] parse failed:", err)
@@ -284,12 +288,7 @@ function App(): React.JSX.Element {
                           </Badge>
                         </div>
 
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium break-all">{module.id}</div>
-                          <pre className="overflow-auto rounded-md bg-muted/50 p-3 text-xs">
-                            {JSON.stringify(module.state, null, 2)}
-                          </pre>
-                        </div>
+
                       </div>
                     ))
                   )}
@@ -334,16 +333,10 @@ function App(): React.JSX.Element {
                           <div>
                             <div className="mb-2 text-sm font-medium">Capabilities</div>
                             <pre className="overflow-auto rounded-md bg-muted/50 p-3 text-xs">
-                              {JSON.stringify(module.capabilities, null, 2)}
+                              {JSON.stringify(module.payload, null, 2)}
                             </pre>
                           </div>
 
-                          <div>
-                            <div className="mb-2 text-sm font-medium">State</div>
-                            <pre className="overflow-auto rounded-md bg-muted/50 p-3 text-xs">
-                              {JSON.stringify(module.state, null, 2)}
-                            </pre>
-                          </div>
                         </CardContent>
                       </Card>
                     ))}

@@ -4,8 +4,7 @@ type ModuleEntry = {
   id: string;
   moduleType: string;
   connected: boolean;
-  capabilities: Record<string, unknown>;
-  state: Record<string, unknown>;
+  payload: Record<string, unknown>;
 };
 
 type RuntimeStore = {
@@ -27,7 +26,7 @@ export const useRuntimeStore = create<RuntimeStore>((set) => ({
       },
     })),
 
-  patchModuleState: (id, patch) =>
+  patchModuleState: (id, newPayload) =>
     set((state) => {
       const current = state.modules[id];
       if (!current) return state;
@@ -37,9 +36,9 @@ export const useRuntimeStore = create<RuntimeStore>((set) => ({
           ...state.modules,
           [id]: {
             ...current,
-            state: {
-              ...current.state,
-              ...patch,
+            payload: {
+              ...payloadObj
+
             },
           },
         },

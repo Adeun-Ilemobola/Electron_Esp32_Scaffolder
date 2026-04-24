@@ -6,20 +6,19 @@
 #include "Types.h"
 const int LED_PIN = 12; // The built-in LED on most ESP32 boards
 bool isLedOn = false;
-std::map<String, Led*> leds; // Map to store LED objects by their pin number
 Btu *button = nullptr; // Assuming the button is connected to pin 0
-
+Led *LED = nullptr;
 
 
 template <typename T>
-void SendEvent(const char *event, std::map<String, T> state)
+void SendEvent(KindMode kind, std::map<String, T> state)
 {
   // Note: Use a larger buffer if you expect many sensors
-  StaticJsonDocument<400> doc;
-  doc["event"] = event;
+  StaticJsonDocument<1000> doc;
+  doc["kind"] = kindModeToString(kind);
 
-  // Create a nested object for the "data" or "state"
-  JsonObject data = doc.createNestedObject("state");
+  // Create a nested object for the "data" or "payload"
+  JsonObject data = doc.createNestedObject("payload");
 
   for (const auto &kv : state)
   {
@@ -33,23 +32,23 @@ void SendEvent(const char *event, std::map<String, T> state)
 void sendLog(const String &message)
 {
   StaticJsonDocument<768> doc;
-  doc["event"] = "log";
-  doc["message"] = message;
+  doc["kind"] = "log";
+  doc["id"] = "101";
+  doc["moduleType"] ="101";
+  JsonObject data = doc.createNestedObject("payload");
+  data["message"] = message;
   serializeJson(doc, Serial);
   Serial.println();
+
 }
 
 
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW); // Ensure it starts off
-  button = new Btu(18, true); // Initialize button on pin 18 with pull-up
-  leds[String(13)] = new Led(13);
-  leds[String(12)] = new Led(12);
-  leds[String(14)] = new Led(14);
-  leds[String(27)] = new Led(27);
+  button = new Btu(18, true);
+  LED  = new Led(LED_PIN);
+
 }
 
 
@@ -59,15 +58,13 @@ void loop() {
 
    if (button->isPressed()) {
         Serial.println("Button is pressed!");
-        bool currentState = leds[String(LED_PIN)]->getState() ;
-        leds[String(LED_PIN)]->setState(!currentState);
+        bool currentState = LED->getState() ;
+        LED->setState(!currentState);
         delay(200); // Debounce delay
-        // Toggle LED state for next press
+
       }
 
-        // Check if the MacBook sent a message
-
-  if (Serial.available()) {
+    if (Serial.available()) {
     String incoming = Serial.readStringUntil('\n');
 
     StaticJsonDocument<768> doc;
@@ -75,34 +72,19 @@ void loop() {
 
     if (!error) {
       const char* cmd = doc[kindModeToString(KindMode::COMMAND)];
-      const char* targetId = doc["id"];
-      /*
-       {
-        "cmd": "led_state",
-        "id": "led_12",
-        "state": true
-       }
 
-      */
 
-      if (strcmp(cmd, "led_state") == 0) {
-        for (const  auto& pair : leds) {
-        if (pair.second->getId() == String(targetId)) {
-          bool newState = doc["state"];
-          pair.second->setState(newState);
 
-        }
+      if (strcmp(cmd , "re-register") == 0){
+        button->serializeSenderInfo(KindMode::REGISTER);
+
+        sendLog("All item are register");
       }
-
 
       }else
     {
       sendLog("JSON parse failed: " + String(error.c_str()));
     }
-
-
-
-
 
     }
   }
