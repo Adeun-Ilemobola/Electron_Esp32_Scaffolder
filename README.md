@@ -23,21 +23,21 @@ Instead of rebuilding the same Electron, React, serial, ESP32, and module-state 
 
 ```txt
 ┌────────────────────────────┐
-│ Python Scaffolder App       │
-│ CustomTkinter Desktop Tool  │
+│ Python Scaffolder App      │
+│ CustomTkinter Desktop Tool │
 └─────────────┬──────────────┘
               │
               │ Generates paired project
               ▼
 ┌────────────────────────────────────────────┐
-│ Generated Project Root                      │
+│ Generated Project Root                     │
 │                                            │
 │  ┌──────────────────────────────────────┐  │
 │  │ Electron Command Center UI           │  │
 │  │ React + TypeScript + Zustand         │  │
 │  └─────────────────┬────────────────────┘  │
-│                    │ Serial JSON            │
-│                    ▼                        │
+│                    │ Serial JSON           │
+│                    ▼                       │
 │  ┌──────────────────────────────────────┐  │
 │  │ ESP32 PlatformIO Firmware            │  │
 │  │ C++ Hardware Modules                 │  │

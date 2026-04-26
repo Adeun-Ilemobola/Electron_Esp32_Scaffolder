@@ -1,10 +1,12 @@
 import { create } from "zustand";
-
-type ModuleEntry = {
+export type ModuleEntry<
+  TPayload extends object = Record<string, any>,
+  TModuleType extends string = string
+> = {
   id: string;
-  moduleType: string;
+  moduleType: TModuleType;
   connected: boolean;
-  payload: Record<string, any>;
+  payload: TPayload;
 };
 
 type RuntimeStore = {
@@ -14,7 +16,6 @@ type RuntimeStore = {
   patchModuleState: (id: string, patch: Record<string, any>) => void;
   removeModule: (id: string) => void;
 };
-
 export const useRuntimeStore = create<RuntimeStore>((set) => ({
   modules: {},
 

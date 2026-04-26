@@ -74,6 +74,10 @@ void Led::toggle()
 
 bool Led::setState(bool newState)
 {
+    if (newState == this->state) {
+        // No change needed
+        return this->state;
+    }
     if (newState) {
         this->on();
         this->sendEvent();

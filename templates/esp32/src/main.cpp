@@ -9,83 +9,64 @@ bool isLedOn = false;
 Btu *button = nullptr; // Assuming the button is connected to pin 0
 Led *LED = nullptr;
 
-
-template <typename T>
-void SendEvent(KindMode kind, std::map<String, T> state)
+void deleteAll()
 {
-  // Note: Use a larger buffer if you expect many sensors
-  StaticJsonDocument<1000> doc;
-  doc["kind"] = kindModeToString(kind);
-
-  // Create a nested object for the "data" or "payload"
-  JsonObject data = doc.createNestedObject("payload");
-
-  for (const auto &kv : state)
+  if (button != nullptr)
   {
-    data[kv.first] = kv.second;
+    delete button;
+    button = nullptr;
   }
-
-  serializeJson(doc, Serial);
-  Serial.println();
+  if (LED != nullptr)
+  {
+    delete LED;
+    LED = nullptr;
+  }
 }
 
-void sendLog(const String &message)
+void setup()
 {
-  StaticJsonDocument<768> doc;
-  doc["kind"] = "log";
-  doc["id"] = "101";
-  doc["moduleType"] ="101";
-  JsonObject data = doc.createNestedObject("payload");
-  data["message"] = message;
-  serializeJson(doc, Serial);
-  Serial.println();
-
-}
-
-
-
-void setup() {
   Serial.begin(115200);
   button = new Btu(18, true);
-  LED  = new Led(LED_PIN);
-
+  LED = new Led(LED_PIN);
 }
 
+void loop()
+{
 
+  if (button->isPressed())
+  {
+    Serial.println("Button is pressed!");
+    bool currentState = LED->getState();
+    LED->setState(!currentState);
+    delay(200); // Debounce delay
+  }
 
-
-void loop() {
-
-   if (button->isPressed()) {
-        Serial.println("Button is pressed!");
-        bool currentState = LED->getState() ;
-        LED->setState(!currentState);
-        delay(200); // Debounce delay
-
-      }
-
-    if (Serial.available()) {
+  if (Serial.available())
+  {
     String incoming = Serial.readStringUntil('\n');
 
     StaticJsonDocument<768> doc;
     DeserializationError error = deserializeJson(doc, incoming);
 
-    if (!error) {
-      const char* cmd = doc[kindModeToString(KindMode::COMMAND)];
-
-
-
-      if (strcmp(cmd , "re-register") == 0){
-        button->serializeSenderInfo(KindMode::REGISTER);
-
-        sendLog("All item are register");
+    if (!error)
+    {
+      const char *cmd = doc[kindModeToString(KindMode::CMD)] | "";
+      sendLog("Received command: " + String(cmd));
+      if (cmd[0] == '\0')
+      {
+        return;
       }
 
-      }else
+      if (strcmp(cmd, "re-register") == 0)
+      {
+        deleteAll();
+        setup();
+        sendLog("All item are register");
+      }
+    }
+    else
     {
       sendLog("JSON parse failed: " + String(error.c_str()));
-    }
-
     }
   }
 }

@@ -1,8 +1,6 @@
 import * as React from "react"
 import FindConnect from "./components/FindConnect"
-
 import { useRuntimeStore } from './zustand/RuntimeStore'
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,8 +17,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-
 import { Activity, Boxes, Cpu, PlugZap, TerminalSquare } from "lucide-react"
+
 
 type IncomingPacket = {
   kind: string
@@ -32,6 +30,7 @@ type IncomingPacket = {
 function App(): React.JSX.Element {
   const [connectedPath, setConnectedPath] = React.useState<string | null>(null)
   const [lastSerialMessage, setLastSerialMessage] = React.useState("No serial data yet.")
+  const [logs, setLogs] = React.useState<Record<string, any>>({})
   const [lastPacket, setLastPacket] = React.useState<IncomingPacket | null>(null)
 
   const modules = useRuntimeStore((state) => state.modules)
@@ -63,6 +62,8 @@ function App(): React.JSX.Element {
   React.useEffect(() => {
     window.api.onSerialData((rawData: string) => {
       setLastSerialMessage(rawData)
+      const now = new Date().toISOString()
+
 
       try {
         const data = JSON.parse(rawData) as IncomingPacket
@@ -75,6 +76,11 @@ function App(): React.JSX.Element {
         const kind = typeof data.kind === "string" ? data.kind.toLowerCase() : data.kind
 
         // REGISTER
+        /*
+         * For new module registrations, we want to add them to the 
+         * runtime store with their initial payload. This allows the UI to 
+         * immediately reflect new modules as they come online.
+         */
         if (kind === "register") {
           registerModule({
             id: data.id,
@@ -86,6 +92,9 @@ function App(): React.JSX.Element {
         }
 
         // STATE
+        /*
+          For state updates, we want to merge the incoming payload with the existing module state in the store.
+        */ 
         if (kind === "state") {
           const existing = modules[data.id]
 
@@ -110,6 +119,7 @@ function App(): React.JSX.Element {
         if (kind === "log") {
           setLastSerialMessage(data.payload.message ?? "")
           console.log(`[MODULE ${data.moduleType === "101 ?" ? "Log ?" : data.moduleType}]`, data.payload)
+          setLogs((prev) => ({ ...prev, [now]: data.payload.message ?? "" }))
 
 
         }
@@ -128,6 +138,13 @@ function App(): React.JSX.Element {
   }
 
   const moduleList = React.useMemo(() => Object.values(modules), [modules])
+  /**
+   * Example of finding a specific module type in the runtime store. This can be 
+   * used to conditionally render components based on module presence or to 
+   * send targeted commands to specific modules.
+   *  const getRfidModule = moduleList.find((mod) => mod.moduleType === "rfid")
+   */
+ 
 
   const totalModules = moduleList.length
   const connectedModules = moduleList.filter((module) => module.connected).length
@@ -143,7 +160,7 @@ function App(): React.JSX.Element {
       case 1:
         return "STATE"
       case 2:
-        return "COMMAND"
+        return "CMD"
       default:
         return `KIND ${lastPacket.kind}`
     }
@@ -251,6 +268,7 @@ function App(): React.JSX.Element {
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="test">Test</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
             <TabsTrigger value="serial">Serial Inspector</TabsTrigger>
           </TabsList>
@@ -348,18 +366,30 @@ function App(): React.JSX.Element {
 
           <TabsContent value="serial" className="space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className=" relative">
                 <CardTitle>Serial Inspector</CardTitle>
                 <CardDescription>
                   Raw incoming serial data before and after runtime parsing.
                 </CardDescription>
+                <Button className="absolute top-2 right-2" variant="outline" size="sm" onClick={() => setLogs({})}>
+                  Clear Logs
+                </Button>
               </CardHeader>
               <CardContent>
-                <pre className="max-h-[520px] overflow-auto rounded-lg border bg-muted/40 p-4 text-xs leading-6">
-                  {lastSerialMessage}
-                </pre>
+                <div className="max-h-60 overflow-y-auto flex flex-col gap-1.5   rounded-lg border bg-muted/40 p-2 text-xs leading-5">
+                  {logs && Object.entries(logs).map(([timestamp, message]) => (
+                    <div key={timestamp} className="mb-1">
+                      <span className="font-mono text-muted-foreground">{`[${timestamp}]`}</span>{" "}
+                      <span className="font-mono">{message}</span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="test" className="space-y-6">
+            
           </TabsContent>
         </Tabs>
       </div>
