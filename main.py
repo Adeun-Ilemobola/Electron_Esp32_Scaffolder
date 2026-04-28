@@ -21,12 +21,7 @@ import pexpect
 APP_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = APP_DIR / "templates"
 
-# Match your current folder names exactly
-UI_TEMPLATE_DIR = TEMPLATES_DIR / "Command_Center_App"
-ESP32_TEMPLATE_DIR = TEMPLATES_DIR / "esp32"
 
-APP_STATE_DIR = Path.home() / ".electron_esp32_scaffolder"
-RECENTS_FILE = APP_STATE_DIR / "recent_projects.json"
 
 # Set up the overall theme
 ctk.set_appearance_mode("dark")
@@ -246,131 +241,10 @@ class ProjectCard(ctk.CTkFrame):
         self.destroy()
 
 
-# =========================================================
-# SCAFFOLD ENGINE
-# =========================================================
-
-class ScaffoldEngine:
-    def __init__(self, ui_template_dir: Path, esp32_template_dir: Path):
-        self.ui_template_dir = ui_template_dir
-        self.esp32_template_dir = esp32_template_dir
-
-    def create_project(self, spec: ProjectSpec) -> Path:
-        if not self.ui_template_dir.exists():
-            raise FileNotFoundError(f"UI template folder not found: {self.ui_template_dir}")
-
-        if not self.esp32_template_dir.exists():
-            raise FileNotFoundError(f"ESP32 template folder not found: {self.esp32_template_dir}")
-
-        root = Path(spec.destination_root).expanduser().resolve()
-        if not root.exists():
-            raise FileNotFoundError(f"Destination folder does not exist: {root}")
-
-        if not root.is_dir():
-            raise NotADirectoryError(f"Destination is not a folder: {root}")
-
-        project_root = root / spec.project_slug
-        ui_target = project_root / f'UI_{spec.name}'
-        esp32_target = project_root / f"esp_{spec.name}"
-        meta_dir = project_root / ".scaffold"
-
-        if project_root.exists():
-            raise FileExistsError(f"Project folder already exists: {project_root}")
-
-        project_root.mkdir(parents=True, exist_ok=False)
-
-        shutil.copytree(self.ui_template_dir, ui_target)
-        # make the package.json  name key  value  change
-        package_json = ui_target / "package.json"
-        if package_json.exists():
-            with open(package_json, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            data["name"] = f"UI_{spec.name}"
-            with open(package_json, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        #update electron-builder.yml with new name
-        electron_builder_yml = ui_target / "electron-builder.yml"
-        if electron_builder_yml.exists():
-            with open(electron_builder_yml, "r", encoding="utf-8") as f:
-                content = f.read()
-                if re.search(r"productName: .+", content):
-                    content = re.sub(r"productName: .+", f"productName: {spec.name}", content)
-                
-            with open(electron_builder_yml, "w", encoding="utf-8") as f:
-                f.write(content)
-        
-
-
-        shutil.copytree(self.esp32_template_dir, esp32_target)
-
-        self._clean_ui_template(ui_target)
-        self._clean_esp32_template(esp32_target)
-        self._patch_ui_template(ui_target, spec)
-
-        meta_dir.mkdir(parents=True, exist_ok=True)
-
-        metadata = {
-            "name": spec.name,
-            "project_id": spec.project_id,
-            "project_slug": spec.project_slug,
-            "project_root": str(project_root),
-            "ui_path": str(ui_target),
-            "esp32_path": str(esp32_target),
-            "type": "ui_and_esp32"
-        }
-
-        with open(meta_dir / "project.json", "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2)
-
-        # for the UI cd and do bun install and for the 
-        subprocess.run(["bun", "install"], cwd=ui_target, check=True)
-
-        return project_root
-
-    def _safe_remove(self, target: Path) -> None:
-        if target.exists():
-            if target.is_dir():
-                shutil.rmtree(target)
-            else:
-                target.unlink()
-
-    def _clean_ui_template(self, ui_target: Path) -> None:
-        for junk in ["node_modules", "out", "dist", "build", ".git", ".DS_Store"]:
-            self._safe_remove(ui_target / junk)
-
-    def _clean_esp32_template(self, esp32_target: Path) -> None:
-        for junk in [".pio", ".git", ".DS_Store"]:
-            self._safe_remove(esp32_target / junk)
-
-    def _patch_ui_template(self, ui_target: Path, spec: ProjectSpec) -> None:
-        package_json = ui_target / "package.json"
-
-        if not package_json.exists():
-            return
-
-        try:
-            with open(package_json, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            data["name"] = spec.project_slug
-            data["productName"] = spec.name
-
-            with open(package_json, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception:
-            # Non-fatal: scaffold should still succeed even if patching package.json fails
-            pass
-
 
 # =========================================================
 # SCAFFOLD ENGINE----V1
 # =========================================================
-
-@dataclass
-class  TemplateFile:
-    source: Path
-    destination: Path
-    fileName: str
 
 
 class ScaffoldEngineV1:
@@ -502,11 +376,11 @@ class ScaffoldEngineV1:
                     content = re.sub(
                         r"(renderer\s*:\s*\{)",
                         r'''\1
-        resolve: {
-          alias: {
-            "@": resolve("src/renderer/src"),
-          },
-        },''',
+                        resolve: {
+                        alias: {
+                            "@": resolve("src/renderer/src"),
+                        },
+                        },''',
                         content,
                         count=1,
                     )

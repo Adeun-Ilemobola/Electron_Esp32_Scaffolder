@@ -1,137 +1,124 @@
-# Electron + ESP32 PlatformIO Architecture
+# Electron + ESP32 Scaffolder
 
-A reusable scaffolding and runtime architecture for building desktop-controlled ESP32 projects.
+A reusable project generator for building **desktop-controlled ESP32 systems**.
 
-This system combines a **Python scaffolder**, an **Electron + React command-center UI**, and an **ESP32 PlatformIO firmware template** into one repeatable project setup. The goal is to make it fast to create new hardware/software projects where a desktop app can discover, monitor, and control ESP32 modules over serial communication.
+This project combines:
 
----
+- a **Python CustomTkinter scaffolder**
+- an **Electron + React + TypeScript command-center UI**
+- an **ESP32 PlatformIO firmware template**
+- a shared **serial JSON protocol**
+- a runtime module registry for dynamic hardware discovery
 
-## What This System Does
-
-This architecture generates paired projects:
-
-* an Electron desktop app for the user interface,
-* an ESP32 PlatformIO firmware project for the hardware side,
-* shared runtime behavior based on structured serial JSON messages,
-* a module registration system so the UI can discover hardware modules dynamically.
-
-Instead of rebuilding the same Electron, React, serial, ESP32, and module-state setup every time, the scaffolder creates a ready-to-use project from templates.
+The goal is simple: create new ESP32 + desktop-control projects without rebuilding the same Electron, serial, UI, firmware, and folder setup every time.
 
 ---
 
-## High-Level Architecture
+## Current Architecture
 
 ```txt
-┌────────────────────────────┐
-│ Python Scaffolder App      │
-│ CustomTkinter Desktop Tool │
-└─────────────┬──────────────┘
-              │
-              │ Generates paired project
-              ▼
-┌────────────────────────────────────────────┐
-│ Generated Project Root                     │
-│                                            │
-│  ┌──────────────────────────────────────┐  │
-│  │ Electron Command Center UI           │  │
-│  │ React + TypeScript + Zustand         │  │
-│  └─────────────────┬────────────────────┘  │
-│                    │ Serial JSON           │
-│                    ▼                       │
-│  ┌──────────────────────────────────────┐  │
-│  │ ESP32 PlatformIO Firmware            │  │
-│  │ C++ Hardware Modules                 │  │
-│  └──────────────────────────────────────┘  │
-│                                            │
-└────────────────────────────────────────────┘
-```
-
----
-
-## Core Idea
-
-The ESP32 firmware exposes hardware features as **modules**.
-
-Examples:
-
-* LED module
-* Button module
-* Sensor module
-* Motor module
-* Relay module
-
-Each module has:
-
-* an ID,
-* a module type,
-* local state,
-* setup logic,
-* command behavior,
-* JSON serialization behavior.
-
-The Electron app does not need to know every module ahead of time. The ESP32 can announce modules over serial, and the Electron UI registers them dynamically in a runtime store.
-
----
-
-## Project Generator
-
-The Python scaffolder is the entry point for creating new projects.
-
-It provides a small desktop UI where the user selects:
-
-* project name,
-* destination folder.
-
-When the user clicks **Generate**, the scaffolder:
-
-1. validates the selected destination folder,
-2. slugifies the project name,
-3. generates a unique project ID,
-4. creates a project root folder,
-5. copies the Electron UI template,
-6. copies the ESP32 PlatformIO template,
-7. patches `package.json`,
-8. patches `electron-builder.yml`,
-9. removes junk template folders,
-10. writes scaffold metadata,
-11. runs `bun install` in the Electron UI folder,
-12. adds the generated project to the recent-projects list.
-
----
-
-## Generated Folder Structure
-
-A generated project follows this structure:
-
-```txt
-project-slug/
-├── UI_Project Name/
-│   ├── package.json
-│   ├── electron-builder.yml
-│   ├── src/
-│   └── ...
+Python Scaffolder App
+        │
+        │ generates
+        ▼
+Project Root
+├── ui_project-slug/
+│   ├── Electron + React + TypeScript UI
+│   ├── SerialPort main-process bridge
+│   ├── Preload API
+│   ├── Zustand runtime store
+│   ├── Tailwind CSS + shadcn/ui
+│   └── Runtime dashboard
 │
-├── esp_Project Name/
-│   ├── platformio.ini
-│   ├── src/
-│   ├── include/
-│   └── ...
+├── esp_project-slug/
+│   ├── PlatformIO ESP32 firmware project
+│   ├── Arduino framework
+│   ├── C++ hardware modules
+│   └── serial JSON packet output
 │
 └── .scaffold/
     └── project.json
 ```
 
-The `.scaffold/project.json` file stores project metadata:
+The generated Electron app controls and monitors the ESP32 over serial communication. The ESP32 announces hardware modules, sends state updates, and receives commands from the desktop UI.
+
+---
+
+## What the Scaffolder Does
+
+The Python scaffolder is the main entry point.
+
+It provides a desktop UI where you choose:
+
+- project name
+- destination folder
+
+When you click **Generate**, the scaffolder:
+
+1. validates the destination folder
+2. slugifies the project name
+3. creates a unique project ID
+4. creates a project root folder
+5. runs the Electron scaffold generator
+6. applies your custom UI template overlay
+7. patches generated Electron config files
+8. installs Electron/UI dependencies with Bun
+9. generates shadcn/ui components
+10. creates the ESP32 PlatformIO folder from your ESP template
+11. writes scaffold metadata
+12. adds the project to the recent-projects list
+
+The scaffolder is not just copying a finished project anymore. It now creates a real Electron base first, then layers your architecture on top.
+
+---
+
+## Generated Folder Structure
+
+Example for a project named `Servo Controller`:
+
+```txt
+servo-controller/
+├── ui_servo-controller/
+│   ├── src/
+│   │   ├── main/
+│   │   ├── preload/
+│   │   └── renderer/
+│   │       └── src/
+│   │           ├── assets/
+│   │           ├── components/
+│   │           ├── lib/
+│   │           ├── zustand/
+│   │           ├── App.tsx
+│   │           └── main.tsx
+│   ├── components.json
+│   ├── electron.vite.config.ts
+│   ├── electron-builder.yml
+│   ├── package.json
+│   └── bun.lock
+│
+├── esp_servo-controller/
+│   ├── platformio.ini
+│   ├── src/
+│   ├── include/
+│   ├── lib/
+│   └── test/
+│
+└── .scaffold/
+    └── project.json
+```
+
+The generated metadata file stores the relationship between both sides:
 
 ```json
 {
-  "name": "Project Name",
-  "project_id": "esp-project-name-a1b2c3",
-  "project_slug": "project-name",
-  "project_root": ".../project-name",
-  "ui_path": ".../project-name/UI_Project Name",
-  "esp32_path": ".../project-name/esp_Project Name",
-  "type": "ui_and_esp32"
+  "name": "Servo Controller",
+  "project_id": "esp-servo-controller-a1b2c3",
+  "project_slug": "servo-controller",
+  "project_root": ".../servo-controller",
+  "ui_path": ".../servo-controller/ui_servo-controller",
+  "esp32_path": ".../servo-controller/esp_servo-controller",
+  "type": "ui_and_esp32",
+  "created_at": "2026-04-27T17:30:00"
 }
 ```
 
@@ -139,92 +126,249 @@ The `.scaffold/project.json` file stores project metadata:
 
 ## Template Layout
 
-The scaffolder expects templates to exist in this structure:
+The current scaffolder expects the new template layout:
 
 ```txt
-templates/
-├── Command_Center_App/
-└── esp32/
+templatesV2/
+├── ui/
+│   ├── src/
+│   │   ├── main/
+│   │   ├── preload/
+│   │   └── renderer/
+│   │       └── src/
+│   │           ├── assets/
+│   │           ├── components/
+│   │           ├── lib/
+│   │           ├── zustand/
+│   │           ├── App.tsx
+│   │           └── main.tsx
+│   ├── components.json
+│   ├── tsconfig.json
+│   └── tsconfig.web.json
+│
+└── esp/
+    ├── platformio.ini
+    ├── src/
+    ├── include/
+    ├── lib/
+    └── test/
 ```
 
-`Command_Center_App` is the Electron desktop template.
-
-`esp32` is the PlatformIO firmware template.
-
-The generator copies both into the new project root so each generated project contains both its UI and firmware side.
+The UI template is used as an **overlay**. It does not blindly replace the whole Electron project.
 
 ---
 
-## Scaffolder State
+## Template Overlay System
 
-The scaffolder stores recent projects locally in the user home directory:
+The newer scaffolder uses a safer overlay system.
+
+Instead of deleting and replacing everything, it applies template files like this:
+
+| Situation | Behavior |
+| --- | --- |
+| File does not exist | Create it |
+| File already exists and is identical | Skip it |
+| File already exists and changed | Update it |
+| File is protected | Do not overwrite it |
+| Junk folder/file | Ignore it |
+
+Ignored paths include:
 
 ```txt
-~/.electron_esp32_scaffolder/recent_projects.json
+node_modules
+dist
+out
+build
+.git
+.pio
+__pycache__
+.DS_Store
 ```
 
-This allows the app to show recently generated projects as clickable cards. Clicking a recent project opens it in VS Code.
+Important generated Electron files are protected from blind overwrite:
+
+```txt
+package.json
+bun.lock
+electron.vite.config.ts
+electron-builder.yml
+dev-app-update.yml
+```
+
+Those files are patched intentionally instead of copied over blindly.
 
 ---
 
-## Electron Command Center
+## Electron Base Generation
 
-The generated Electron app is the desktop control surface for the ESP32.
+The UI project is created using:
 
-It is built with:
+```bash
+bunx @quick-start/create-electron@latest ui_project-slug --template react-ts
+```
 
-* Electron
-* electron-vite
-* React
-* TypeScript
-* Vite
-* Zustand
-* Zod
-* SerialPort
-* Tailwind CSS
-* shadcn/ui
-* Radix UI
-* Lucide React
-* Electron Builder
+Because this generator asks interactive questions, the Python engine uses `pexpect` to answer the prompts automatically.
 
-The app handles:
+Current prompt choices:
 
-* auto-connection to the ESP32,
-* serial message listening,
-* JSON packet parsing,
-* runtime module registration,
-* module state updates,
-* raw serial inspection,
-* commands sent back to the ESP32.
+```txt
+Add Electron updater plugin: Yes
+Enable Electron download mirror proxy: No
+```
+
+After generation, the scaffolder patches the project for your architecture.
 
 ---
 
-## Electron Scripts
+## Electron Config Patches
 
-Common scripts:
+The scaffolder patches `electron.vite.config.ts` so the generated app understands:
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run build:win
-npm run build:mac
-npm run build:linux
+- the `@` alias
+- Tailwind CSS v4 through the Vite plugin
+
+The renderer config needs the important pieces below:
+
+```ts
+import { resolve } from "path"
+import tailwindcss from "@tailwindcss/vite"
+
+renderer: {
+  resolve: {
+    alias: {
+      "@": resolve("src/renderer/src"),
+    },
+  },
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+}
 ```
 
-Development usually starts with:
+This is required because TypeScript and Vite are separate systems.
 
-```bash
-npm run dev
+`tsconfig.web.json` helps the editor understand `@/...`.
+
+`electron.vite.config.ts` helps the actual Vite dev server understand `@/...`.
+
+---
+
+## UI Stack
+
+The generated Electron command center uses:
+
+- Electron
+- electron-vite
+- React
+- TypeScript
+- Bun
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- Radix UI
+- Lucide React
+- Zustand
+- Zod
+- SerialPort
+- Electron Builder
+
+The Electron app is split into:
+
+```txt
+src/main/       Electron main process
+src/preload/    Safe bridge between main and renderer
+src/renderer/   React UI
 ```
+
+---
+
+## shadcn/ui Components
+
+The scaffolder generates the required shadcn/ui components automatically.
+
+Current component set:
+
+```txt
+button
+card
+input
+label
+dialog
+slider
+select
+switch
+sonner
+badge
+separator
+tabs
+```
+
+These components are generated into:
+
+```txt
+src/renderer/src/components/ui/
+```
+
+Example import:
+
+```ts
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+```
+
+---
+
+## Tailwind CSS
+
+The renderer CSS entry file should be imported from `main.tsx`:
+
+```ts
+import "./assets/main.css"
+```
+
+For Tailwind CSS v4, the main CSS file should include:
+
+```css
+@import "tailwindcss";
+@import "tw-animate-css";
+```
+
+If the app renders with plain browser styling, check:
+
+1. `main.tsx` imports the CSS file
+2. `main.css` imports Tailwind
+3. `electron.vite.config.ts` uses `tailwindcss()`
+4. `tailwindcss` and `@tailwindcss/vite` are installed
+
+---
+
+## Runtime Dashboard
+
+The React dashboard is runtime-driven.
+
+It displays information coming from the serial bridge and the Zustand runtime store:
+
+- connection status
+- connected serial path
+- registered module count
+- connected module count
+- last packet kind
+- last raw serial message
+- module registry
+- serial inspector
+- re-register command
+- test command buttons
+
+The UI is designed so the ESP32 can announce what exists instead of the React app hardcoding every hardware component.
 
 ---
 
 ## Runtime Store
 
-The Electron renderer uses a Zustand store as the runtime registry for connected ESP32 modules.
+The renderer uses Zustand as a dynamic module registry.
 
-Each module is represented as:
+A module entry follows this shape:
 
 ```ts
 type ModuleEntry = {
@@ -235,7 +379,7 @@ type ModuleEntry = {
 }
 ```
 
-The runtime store exposes:
+The store exposes actions like:
 
 ```ts
 registerModule(module)
@@ -243,15 +387,41 @@ patchModuleState(id, patch)
 removeModule(id)
 ```
 
-This makes the frontend dynamic. Instead of hardcoding every module into React state, modules can register themselves from the firmware side.
+This allows the UI to update based on packets coming from the ESP32.
 
 ---
 
-## Serial Packet Contract
+## Serial Communication
 
-The firmware and Electron app communicate using newline-separated JSON packets.
+Communication between Electron and the ESP32 uses newline-separated JSON packets.
 
-The common packet shape is:
+The main process handles the actual SerialPort connection.
+
+The renderer communicates through the preload API.
+
+```txt
+Renderer React UI
+      │
+      ▼
+Preload API
+      │
+      ▼
+Electron Main Process
+      │
+      ▼
+SerialPort
+      │
+      ▼
+ESP32
+```
+
+The renderer should not directly access Node APIs. The preload layer exposes only the safe commands/events the UI needs.
+
+---
+
+## Packet Contract
+
+Incoming ESP32 packets follow this general shape:
 
 ```ts
 type IncomingPacket = {
@@ -275,7 +445,7 @@ Example register packet:
 }
 ```
 
-Example button state packet:
+Example state packet:
 
 ```json
 {
@@ -293,10 +463,10 @@ Example log packet:
 ```json
 {
   "kind": "log",
-  "id": "101",
-  "moduleType": "101",
+  "id": "system",
+  "moduleType": "system",
   "payload": {
-    "message": "All items are registered"
+    "message": "All modules registered"
   }
 }
 ```
@@ -305,31 +475,31 @@ Example log packet:
 
 ## Packet Kinds
 
-| Kind         | Direction        | Purpose                                     |
-| ------------ | ---------------- | ------------------------------------------- |
-| `register`   | ESP32 → Electron | Announces that a module exists.             |
-| `state`      | ESP32 → Electron | Sends a state update for a module.          |
-| `remove`     | ESP32 → Electron | Removes a module from the runtime registry. |
-| `disconnect` | ESP32 → Electron | Marks or removes a disconnected module.     |
-| `log`        | ESP32 → Electron | Sends firmware-side log messages to the UI. |
-| `command`    | Electron → ESP32 | Sends a command to the firmware.            |
+| Kind | Direction | Purpose |
+| --- | --- | --- |
+| `register` | ESP32 → Electron | Announces that a module exists |
+| `state` | ESP32 → Electron | Sends state changes |
+| `remove` | ESP32 → Electron | Removes a module from the UI registry |
+| `disconnect` | ESP32 → Electron | Marks a module/device as disconnected |
+| `log` | ESP32 → Electron | Sends firmware-side logs |
+| `command` | Electron → ESP32 | Sends commands to the firmware |
 
 ---
 
 ## Command Flow
 
-The Electron app sends commands to the ESP32 using the preload API.
+The UI can send commands to the ESP32 through the preload API.
 
-Example commands:
+Example:
 
 ```ts
 window.api.sendCommand({ cmd: "re-register" })
-window.api.sendCommand({ cmd: "toggle_led" })
+window.api.sendCommand({ cmd: "toggle_led" id:"64hgfdg7fg" })
 ```
 
-The ESP32 listens for incoming serial JSON, parses it, and responds based on the command.
+The firmware reads serial input, parses JSON, and decides what action to perform.
 
-For example, when the ESP32 receives:
+Example command packet:
 
 ```json
 {
@@ -337,157 +507,92 @@ For example, when the ESP32 receives:
 }
 ```
 
-it can ask its modules to send fresh `register` packets back to the Electron app.
+The ESP32 can respond by sending fresh `register` packets for all known modules.
+
+---
+
+## ESP32 Firmware Template
+
+The ESP32 side is a PlatformIO project using the Arduino framework.
+
+The scaffolder currently creates the ESP32 side by copying the known-good template from:
+
+```txt
+templatesV2/esp
+```
+
+This avoids requiring the `pio` CLI to be available globally from the Python app.
+
+Expected ESP32 output:
+
+```txt
+esp_project-slug/
+├── platformio.ini
+├── src/
+├── include/
+├── lib/
+└── test/
+```
+
+The ESP32 template can still be opened and managed with PlatformIO inside VS Code.
 
 ---
 
 ## Firmware Architecture
 
-The ESP32 firmware is written in C++ and follows a module-based style.
+The firmware uses a module-style C++ structure.
 
-The main firmware file is responsible for:
+A hardware module should own:
 
-* starting serial communication,
-* creating module instances,
-* running the main loop,
-* checking input modules,
-* updating output modules,
-* reading incoming serial commands,
-* parsing JSON commands,
-* calling module serialization functions.
+- module ID
+- module type
+- pin configuration
+- local state
+- setup behavior
+- update/read behavior
+- command behavior
+- JSON serialization behavior
 
-Example runtime behavior:
+Examples:
 
-```txt
-Button is pressed
-      │
-      ▼
-ESP32 reads button state
-      │
-      ▼
-LED state toggles
-      │
-      ▼
-LED sends state packet
-      │
-      ▼
-Electron receives JSON
-      │
-      ▼
-Zustand runtime store updates
-      │
-      ▼
-React dashboard refreshes
-```
+- LED module
+- Button module
+- Servo module
+- Sensor module
+- Motor module
+- Relay module
+
+The long-term direction is for each module to be self-describing, so the Electron UI can build its runtime dashboard from the ESP32’s announcements.
 
 ---
 
-## Firmware Modules
-
-Hardware features are wrapped in C++ classes.
-
-Current module examples:
-
-* `Led`
-* `Btu`
-
-The naming can evolve over time. For readability, `Btu` may eventually become `Button` or `ButtonModule`, but the current idea is already clear: each hardware component owns its own behavior and serial representation.
-
----
-
-## LED Module
-
-The LED module owns:
-
-* output pin,
-* current state,
-* module ID,
-* setup behavior,
-* `on()` behavior,
-* `off()` behavior,
-* `toggle()` behavior,
-* `setState()` behavior,
-* JSON serialization behavior.
-
-Example LED module packet:
-
-```json
-{
-  "kind": "state",
-  "id": "led_12",
-  "moduleType": "led",
-  "payload": {
-    "state": true
-  }
-}
-```
-
-The LED module can announce itself with `register` and publish state changes with `state`.
-
----
-
-## Button Module
-
-The button module owns:
-
-* input pin,
-* pull-up configuration,
-* current pressed state,
-* module ID,
-* setup behavior,
-* state reading behavior,
-* JSON serialization behavior.
-
-Example button module packet:
-
-```json
-{
-  "kind": "state",
-  "id": "button_18",
-  "moduleType": "button",
-  "payload": {
-    "isPressed": true
-  }
-}
-```
-
-The button module supports both pull-up and non-pull-up input modes.
-
----
-
-## Module Registration Flow
-
-When a module is created, it can send a `register` packet.
+## Example Module Registration Flow
 
 ```txt
 ESP32 starts
     │
     ▼
-Module setup runs
+Modules are created
     │
     ▼
-Module serializes itself as register packet
+Each module sends a register packet
     │
     ▼
-Electron receives packet
+Electron receives serial JSON
     │
     ▼
-Renderer parses packet
+Renderer parses the packet
     │
     ▼
 Zustand registerModule() stores it
     │
     ▼
-Dashboard displays module
+React dashboard updates
 ```
-
-This keeps the UI flexible because the ESP32 tells the UI what exists.
 
 ---
 
-## State Update Flow
-
-When a module changes, it sends a `state` packet.
+## Example State Update Flow
 
 ```txt
 Hardware state changes
@@ -505,175 +610,270 @@ Electron receives packet
 Renderer calls patchModuleState()
     │
     ▼
-Dashboard updates module payload
+Dashboard refreshes
 ```
-
-This is the core live-update mechanism.
-
----
-
-## Re-Register Flow
-
-The UI can request all modules to announce themselves again.
-
-```txt
-User clicks Re-register Modules
-    │
-    ▼
-Electron sends command
-    │
-    ▼
-ESP32 receives re-register
-    │
-    ▼
-ESP32 asks modules to serialize register packets
-    │
-    ▼
-Electron rebuilds runtime registry
-```
-
-This is useful after reconnecting, refreshing, or debugging serial communication.
-
----
-
-## React Dashboard
-
-The current dashboard includes:
-
-* connection status,
-* connected serial path,
-* registered module count,
-* connected module count,
-* last packet kind,
-* last raw serial message,
-* runtime module registry,
-* serial inspector,
-* re-register button,
-* LED toggle button.
-
-The dashboard is intentionally runtime-driven. It reads from the Zustand module registry and displays whatever modules the ESP32 announces.
 
 ---
 
 ## Development Workflow
 
-Typical workflow:
+Generate a project:
 
 1. Open the Python scaffolder.
 2. Enter a project name.
 3. Select a destination folder.
-4. Generate the project.
+4. Click **Generate**.
 5. Open the generated project in VS Code.
-6. Start the Electron app.
+
+Run the Electron app:
 
 ```bash
-cd "UI_Project Name"
-npm run dev
+cd ui_project-slug
+bun run dev
 ```
 
-7. Open the ESP32 folder in PlatformIO.
-8. Build and upload the firmware.
-9. Connect the ESP32 over USB.
-10. Use the Electron dashboard to inspect and control the device.
+Open the ESP32 firmware:
+
+```txt
+esp_project-slug/
+```
+
+Then use PlatformIO to:
+
+- build
+- upload
+- monitor serial output
 
 ---
 
-## Design Principles
+## Scaffolder Logging
 
-### 1. Generate the boring structure
+The Python app uses structured log events.
 
-The scaffolder handles repeated setup work so new projects start faster.
+Log levels:
 
-### 2. Keep UI and firmware together
+```txt
+INFO
+SUCCESS
+WARNING
+ERROR
+STEP
+COMMAND
+```
 
-Each generated project contains both sides of the system.
+The engine sends log events back to the UI using a callback:
 
-### 3. Make modules self-describing
+```txt
+ScaffoldEngineV1
+      │
+      ▼
+LogEvent callback
+      │
+      ▼
+CustomTkinter log textbox
+```
 
-ESP32 modules announce their own ID, type, and state.
+This makes long scaffolding operations easier to understand because the UI can show:
 
-### 4. Use JSON as the serial contract
+- what step is running
+- what command is executing
+- command output
+- warnings
+- errors
+- success messages
 
-Structured JSON makes the communication easier to debug and extend.
+---
 
-### 5. Keep React state dynamic
+## Recent Projects
 
-The frontend uses a runtime registry instead of hardcoded component state.
+The scaffolder stores recent projects locally:
 
-### 6. Make debugging visible
+```txt
+~/.electron_esp32_scaffolder/recent_projects.json
+```
 
-Raw serial logs and runtime module views make hardware/software communication problems easier to inspect.
+Recent projects are shown as cards in the UI.
+
+Clicking a card opens the project path in VS Code.
+
+---
+
+## Important Requirements
+
+The scaffolder assumes these tools are available:
+
+```txt
+Python 3
+Bun
+Node-compatible package ecosystem
+VS Code
+PlatformIO extension for ESP32 development
+```
+
+Python dependency:
+
+```bash
+python3 -m pip install pexpect
+```
+
+The ESP32 template no longer requires the `pio` CLI during project generation, but PlatformIO is still needed for building and uploading firmware.
 
 ---
 
 ## Current Features
 
-* Python desktop scaffolder
-* Electron UI template generation
-* ESP32 PlatformIO template generation
-* Project metadata generation
-* Recent project tracking
-* VS Code launch from recent-project cards
-* Automatic `bun install`
-* Electron + React dashboard
-* Serial communication layer
-* JSON packet parsing
-* Zustand runtime module registry
-* Module registration packets
-* Module state packets
-* Firmware log packets
-* Button input module
-* LED output module
-* Re-register command
-* LED toggle command example
+- Python CustomTkinter desktop scaffolder
+- Structured engine logging with callbacks
+- Recent project tracking
+- VS Code launch from project cards
+- Electron project generation through `@quick-start/create-electron`
+- Automated interactive Electron prompt handling with `pexpect`
+- Safe template overlay system
+- Protected generated config files
+- Automatic Electron config patching
+- Automatic Tailwind/Vite alias patching
+- Bun dependency installation
+- shadcn/ui component generation
+- ESP32 PlatformIO template generation
+- `.scaffold/project.json` metadata
+- Electron main/preload/renderer architecture
+- SerialPort scanning and connection logic
+- Runtime module registry with Zustand
+- JSON packet parsing
+- Runtime dashboard foundation
+- Firmware template foundation
+
+---
+
+## Design Principles
+
+### Generate the boring structure
+
+The scaffolder handles repeated project setup so new builds start faster.
+
+### Use overlays instead of blind copies
+
+Generated projects should be updated carefully. The scaffolder adds and updates architecture files without carelessly overwriting important generated config.
+
+### Keep UI and firmware together
+
+Each generated project contains both the Electron command center and the ESP32 firmware project.
+
+### Make hardware modules self-describing
+
+The ESP32 should tell the UI what modules exist, instead of the UI hardcoding everything.
+
+### Use JSON as the serial contract
+
+JSON packets make communication easier to inspect, log, debug, and extend.
+
+### Keep React state runtime-driven
+
+The frontend stores connected modules dynamically in Zustand.
+
+### Patch generated config intentionally
+
+Important files like `package.json`, `electron.vite.config.ts`, and `electron-builder.yml` should be patched directly, not blindly replaced.
+
+---
+
+## Known Notes
+
+### `tsconfig.web.json` baseUrl warning
+
+TypeScript may warn that `baseUrl` is deprecated.
+
+That warning is not usually what breaks the app. The important runtime alias must exist in:
+
+```txt
+electron.vite.config.ts
+```
+
+### Plain HTML with no styling
+
+If the app runs but looks unstyled, check:
+
+```txt
+src/renderer/src/main.tsx
+src/renderer/src/assets/main.css
+electron.vite.config.ts
+package.json dependencies
+```
+
+The usual cause is that Tailwind is installed but not wired into the Vite renderer config.
+
+### Import errors for `@/components/ui/...`
+
+If Vite cannot resolve `@/components/ui/button`, the file might exist but Vite may not know the `@` alias.
+
+Check:
+
+```txt
+electron.vite.config.ts
+```
+
+The renderer config must include:
+
+```ts
+resolve: {
+  alias: {
+    "@": resolve("src/renderer/src"),
+  },
+}
+```
 
 ---
 
 ## Future Improvements
 
-Possible improvements:
+Possible next improvements:
 
-* Rename `Btu` to `Button` or `ButtonModule` for clarity.
-* Add a shared protocol document.
-* Add Zod schemas for incoming serial packets.
-* Add command schemas for outgoing commands.
-* Add heartbeat packets.
-* Add reconnect and timeout handling.
-* Add module capability descriptions.
-* Add firmware-side base module class.
-* Add module registry on the ESP32 side.
-* Add support for multiple buttons, LEDs, sensors, and relays.
-* Add generated README files inside every scaffolded project.
-* Add board selection for different ESP32 variants.
-* Add PlatformIO environment selection.
-* Add a visual architecture diagram.
-* Add automated checks after project generation.
+- Generate a README inside every scaffolded project
+- Add board selection for ESP32 variants
+- Add PlatformIO environment selection
+- Add firmware-side base module class
+- Add firmware-side module registry
+- Add Zod validation for incoming packets
+- Add Zod validation for outgoing commands
+- Add heartbeat and timeout packets
+- Add reconnect logic
+- Add module capability descriptions
+- Add support for multiple sensors and outputs
+- Add project preset selection
+- Add cleanup/rollback when generation fails
+- Add post-generation validation checks
+- Add prettier/formatter pass after generation
+- Add visual architecture diagram inside the app
+- Add a proper module marketplace/template library later
 
 ---
 
-## Example End-to-End Flow
+## End-to-End Flow
 
 ```txt
 1. Python scaffolder creates a new project.
-2. User opens generated project in VS Code.
-3. Electron app starts and auto-connects to ESP32.
-4. Electron sends re-register command.
-5. ESP32 modules send register packets.
-6. React parses packets from serial.
-7. Zustand stores modules by ID.
-8. Dashboard displays modules.
-9. User presses a physical button.
-10. ESP32 toggles LED state.
-11. LED module sends state packet.
-12. Electron updates the runtime dashboard.
+2. Electron base project is generated.
+3. UI template overlay is applied.
+4. Electron config is patched.
+5. Bun installs dependencies.
+6. shadcn/ui components are generated.
+7. ESP32 template is copied.
+8. Metadata is written.
+9. User opens the project in VS Code.
+10. Electron app starts.
+11. Main process scans serial ports.
+12. ESP32 sends JSON packets.
+13. Renderer updates Zustand runtime store.
+14. React dashboard displays the live device state.
+15. User sends commands back to the ESP32.
 ```
 
 ---
 
 ## Summary
 
-This architecture is a reusable foundation for ESP32 projects controlled by an Electron desktop application.
+This project is a reusable foundation for building ESP32 systems controlled by an Electron desktop app.
 
-The scaffolder solves project setup. The firmware module system solves hardware organization. The serial JSON protocol solves communication. The Zustand runtime registry solves dynamic UI state.
+The Python scaffolder solves project setup. The Electron command center solves desktop control and serial communication. The ESP32 template solves the firmware starting point. The JSON protocol connects both sides.
 
-Together, they form a practical system for building desktop-controlled embedded projects without starting from scratch every time.
+Together, they create a repeatable workflow for building hardware projects without starting from zero every time.
