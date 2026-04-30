@@ -21,14 +21,11 @@ import pexpect
 APP_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = APP_DIR / "templates"
 
+APP_STATE_DIR = Path.home() / ".scaffolder_app"
+RECENTS_FILE = APP_STATE_DIR / "recent_projects.json"
 
-
-# Set up the overall theme
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
-
-UI_TEMPLATE_FILES_DIR  = APP_DIR/"templatesV2"/"ui"
-ESP32_TEMPLATE_FILES_DIR = APP_DIR/"templatesV2"/"esp"
+UI_TEMPLATE_FILES_DIR = APP_DIR / "templatesV2" / "ui"
+ESP32_TEMPLATE_FILES_DIR = APP_DIR / "templatesV2" / "esp"
 dependencies_Installation_Commands_UI = [
     "shadcn", "class-variance-authority", "clsx", "tailwind-merge", "lucide-react", "tw-animate-css" ,"zod" ,"zustand"
    
@@ -280,6 +277,7 @@ class ScaffoldEngineV1:
             "tabs",
             "drawer",
             "popover",
+            "scroll-area"
 
         ]
 

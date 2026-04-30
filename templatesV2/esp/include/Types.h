@@ -9,23 +9,6 @@ enum class KindMode
     RESPONSE,
     LOG
 };
-enum class RfidMode
-{
-    SCAN,
-    WRITE
-};
-inline const char *rfidModeToString(RfidMode mode)
-{
-    switch (mode)
-    {
-    case RfidMode::SCAN:
-        return "scan";
-    case RfidMode::WRITE:
-        return "write";
-    default:
-        return "unknown";
-    }
-}
 
 inline const char *kindModeToString(KindMode kind)
 {
@@ -53,17 +36,17 @@ inline const void sendLog(const String &message)
     doc["id"] = "101";
     doc["moduleType"] = "101";
     JsonObject data = doc.createNestedObject("payload");
-    data["message"] = message;
+    data["message"] = "[Esp] " + message;
     serializeJson(doc, Serial);
     Serial.println();
 }
 
 template <typename T>
-inline const void SendEvent( std::map<String, T> state)
+inline const void SendEvent(KindMode kind, std::map<String, T> state)
 {
     // Note: Use a larger buffer if you expect many sensors
-    StaticJsonDocument<2000> doc;
-    doc["kind"] = kindModeToString(KindMode::RESPONSE);
+    StaticJsonDocument<1000> doc;
+    doc["kind"] = kindModeToString(kind);
 
     // Create a nested object for the "data" or "payload"
     JsonObject data = doc.createNestedObject("payload");
@@ -75,4 +58,24 @@ inline const void SendEvent( std::map<String, T> state)
 
     serializeJson(doc, Serial);
     Serial.println();
+}
+
+
+inline String IdGenerator(int zoneCount = 3, int charCount = 5)
+{
+    char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*?";
+    String id;
+    for (int i = 0; i < zoneCount; i++)
+    {
+        for (int i = 0; i < charCount; i++)
+        {
+            id += chars[random(0, sizeof(chars) - 1)];
+        }
+        if (i < zoneCount - 1){
+             id += "-";
+        }
+
+    }
+
+    return id;
 }
