@@ -55,6 +55,39 @@ void Buzzer::RESTART()
     setup();
 }
 
+void Buzzer::onCommand(const char *targetId, const char *cmd, JsonDocument &doc)
+{
+    if (strcmp(targetId, id.c_str()) != 0)
+    {
+        return;
+    }
+
+    bool changed = false;
+
+    if (strcmp(cmd, "on") == 0)
+    {
+        on();
+        changed = true;
+    }
+    else if (strcmp(cmd, "off") == 0)
+    {
+        off();
+        changed = true;
+    }
+    else if (strcmp(cmd, "setPulse") == 0)
+    {
+        int duration = doc["duration"] | 200; // Default to 200ms
+        int count = doc["count"] | 5;         // Default to 5 pulses
+        pulse(duration, count);
+        changed = true;
+    }
+
+    if (changed)
+    {
+        serializeSenderInfo(KindMode::STATE);
+    }
+}
+
 Buzzer::~Buzzer()
 {
     

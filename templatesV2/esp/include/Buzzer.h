@@ -18,6 +18,7 @@ public:
     void serializeSenderInfo(KindMode kind) const;
     String getId() const{ return id; }
     void RESTART();
+    void onCommand(const char* targetId, const char* cmd, JsonDocument& doc);
 
 private:
     int pin;

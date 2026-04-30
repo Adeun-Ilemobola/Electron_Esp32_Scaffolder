@@ -65,6 +65,34 @@ void Led::RESTART()
     setup(false);
 }
 
+void Led::onCommand(const char *targetId, const char *cmd, JsonDocument &doc)
+{
+    if (strcmp(targetId, id.c_str()) != 0)
+    {
+        return;
+    }
+
+    bool changed = false;
+
+    if (strcmp(cmd, "toggle") == 0)
+    {
+        toggle();
+        changed = true;
+    }
+    else if (strcmp(cmd, "setState") == 0)
+    {
+        if (doc.containsKey("state"))
+        {
+            bool newState = doc["state"] | false;
+            setState(newState);
+            changed = true;
+        }
+    }
+    if (changed)    {
+        serializeSenderInfo(KindMode::STATE);
+    }
+}
+
 void Led::toggle()
 {
     if (this->state)

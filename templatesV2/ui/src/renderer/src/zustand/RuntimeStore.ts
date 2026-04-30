@@ -1,12 +1,15 @@
 import { create } from "zustand";
+import type { CommandName } from "./Command";
+import type { ModulePayloadSchema, RegisteredModuleType } from "./Module";
+
+
 export type ModuleEntry<
-  TPayload extends object = Record<string, any>,
-  TModuleType extends string = string
+  TModuleType extends RegisteredModuleType = RegisteredModuleType
 > = {
   id: string;
   moduleType: TModuleType;
   connected: boolean;
-  payload: TPayload;
+  payload: ModulePayloadSchema[TModuleType];
 };
 
 type RuntimeStore = {
@@ -15,17 +18,21 @@ type RuntimeStore = {
   registerModule: (module: ModuleEntry) => void;
   patchModuleState: (id: string, patch: Record<string, any>) => void;
   removeModule: (id: string) => void;
+  clearModules: () => void;
 };
 export const useRuntimeStore = create<RuntimeStore>((set) => ({
   modules: {},
+  clearModules: () => set({ modules: {} }),
 
-  registerModule: (module) =>
+  registerModule: (module) =>{
     set((state) => ({
       modules: {
         ...state.modules,
         [module.id]: module,
       },
-    })),
+    }))
+  },
+    
 
   patchModuleState: (id, newPayload) =>
     set((state) => {
