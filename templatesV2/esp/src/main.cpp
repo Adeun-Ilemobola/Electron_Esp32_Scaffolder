@@ -45,17 +45,15 @@ void loop()
   {
     String incoming = Serial.readStringUntil('\n');
 
-    StaticJsonDocument<768> doc;
+    StaticJsonDocument<800> doc;
     DeserializationError error = deserializeJson(doc, incoming);
 
     if (!error)
     {
       const char *cmd = doc[kindModeToString(KindMode::CMD)] | "";
       sendLog("Received command: " + String(cmd));
-      if (cmd[0] == '\0')
-      {
-        return;
-      }
+      if (cmd[0] == '\0'){return;}
+      const char *id = doc["id"] | " ";
 
       if (strcmp(cmd, "re-register") == 0)
       {

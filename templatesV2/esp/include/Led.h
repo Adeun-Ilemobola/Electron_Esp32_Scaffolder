@@ -10,7 +10,7 @@ class Led
 public:
     Led(int pin);
     ~Led();
-    void setup(int pin);
+    void setup(bool shouldRegister = false);
     void toggle();
     bool getState() const;
     bool setState(bool newState);
@@ -22,6 +22,7 @@ public:
         return id;
     }
     void serializeSenderInfo(KindMode kind) const;
+    void RESTART();
    
 private:
     int pin;

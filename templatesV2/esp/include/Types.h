@@ -59,11 +59,11 @@ inline const void sendLog(const String &message)
 }
 
 template <typename T>
-inline const void SendEvent(KindMode kind, std::map<String, T> state)
+inline const void SendEvent( std::map<String, T> state)
 {
     // Note: Use a larger buffer if you expect many sensors
-    StaticJsonDocument<1000> doc;
-    doc["kind"] = kindModeToString(kind);
+    StaticJsonDocument<2000> doc;
+    doc["kind"] = kindModeToString(KindMode::RESPONSE);
 
     // Create a nested object for the "data" or "payload"
     JsonObject data = doc.createNestedObject("payload");

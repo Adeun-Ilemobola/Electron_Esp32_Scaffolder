@@ -1,18 +1,19 @@
 #include "Buzzer.h"
 
-Buzzer::Buzzer(int pin): pin(pin), id("buzzer_" + String(pin))
+Buzzer::Buzzer(int pin): pin(pin), id(IdGenerator()), state(false)
 {
-    this->setup(pin);
+   
     
 }
-void Buzzer::setup(int pin)
+void Buzzer::setup(bool shouldRegister)
 {
-    this->pin = pin;
-    this->state = false;
     pinMode(this->pin, OUTPUT);
     digitalWrite(this->pin, LOW); // Ensure it starts off
 
-    this->serializeSenderInfo(KindMode::REGISTER);
+    if (shouldRegister)
+    {
+        this->serializeSenderInfo(KindMode::REGISTER);
+    }
 }
 void Buzzer::on()
 {
@@ -43,8 +44,16 @@ void Buzzer::serializeSenderInfo(KindMode kind) const
     doc["moduleType"] = "buzzer";
     JsonObject payloadObj = doc.createNestedObject("payload");
     payloadObj["state"] = this->state;
+    serializeJson(doc, Serial);
+    Serial.println();
 }
 
+void Buzzer::RESTART()
+{
+    Serial.println("Restarting Buzzer module...");
+    state = false;
+    setup();
+}
 
 Buzzer::~Buzzer()
 {

@@ -23,7 +23,7 @@ private:
     mutable bool state = false;
     String id ;
 
-    void setup(int pin, bool isPullUp);
+    void setup(bool shouldRegister = false);
 
 };
 

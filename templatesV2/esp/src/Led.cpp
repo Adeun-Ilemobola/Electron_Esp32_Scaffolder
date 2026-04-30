@@ -2,48 +2,43 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-
-Led::Led( int pin):pin(pin), state(false), id("led_" + String(pin))
+Led::Led(int pin) : pin(pin), state(false), id(IdGenerator())
 {
-    this->setup(pin);
-    Serial.println("LED initialized on pin " + String(pin));
 
+    this->setup(true);
+    Serial.println("LED initialized on pin " + String(pin));
 }
 
 Led::~Led()
 {
-
 }
 
-void Led::setup(int pin)
+void Led::setup(bool shouldRegister)
 {
-    this->pin = pin;
-    this->state = false;
+
     pinMode(this->pin, OUTPUT);
     digitalWrite(this->pin, LOW); // Ensure it starts off
-
-    this->serializeSenderInfo(KindMode::REGISTER);
+    if (shouldRegister)
+    {
+        serializeSenderInfo(KindMode::REGISTER);
+    }
 }
 
 bool Led::getState() const
 {
     return this->state;
-
 }
 
 void Led::on()
 {
     this->state = true;
     digitalWrite(this->pin, HIGH);
-
-
 }
 
 void Led::off()
 {
     this->state = false;
     digitalWrite(this->pin, LOW);
-
 }
 
 void Led::sendEvent() const
@@ -63,28 +58,41 @@ void Led::serializeSenderInfo(KindMode kind) const
     Serial.println();
 }
 
+void Led::RESTART()
+{
+    Serial.println("Restarting LED module...");
+    state = false;
+    setup(false);
+}
+
 void Led::toggle()
 {
-    if (this->state) {
+    if (this->state)
+    {
         this->off();
-    } else {
+    }
+    else
+    {
         this->on();
     }
 }
 
 bool Led::setState(bool newState)
 {
-    if (newState == this->state) {
+    if (newState == this->state)
+    {
         // No change needed
         return this->state;
     }
-    if (newState) {
+    if (newState)
+    {
         this->on();
         this->sendEvent();
-    } else {
+    }
+    else
+    {
         this->off();
         this->sendEvent();
-
     }
     return this->state;
 }

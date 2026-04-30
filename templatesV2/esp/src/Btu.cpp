@@ -3,9 +3,9 @@
 #include <ArduinoJson.h>
 
 
-Btu::Btu(int pin, bool isPullUp):pin(pin), isPullUp(isPullUp) , id("button_" + String(pin))
+Btu::Btu(int pin, bool isPullUp):pin(pin), isPullUp(isPullUp) , id(IdGenerator())
 {
-    this->setup(pin, isPullUp);
+    
 }
 
 Btu::~Btu()
@@ -14,17 +14,17 @@ Btu::~Btu()
 
 }
 
-void Btu::setup(int pin, bool isPullUp)
+void Btu::setup(bool shouldRegister)
 {
-    this->pin = pin;
-    this->isPullUp = isPullUp;
-
     if (this->isPullUp) {
         pinMode(this->pin, INPUT_PULLUP);
     } else {
         pinMode(this->pin, INPUT);
     }
+    if (shouldRegister)
+    {
         this->serializeSenderInfo(KindMode::REGISTER);
+    }
 }
 
 bool Btu::getState() const
