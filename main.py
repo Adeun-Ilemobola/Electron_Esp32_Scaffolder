@@ -278,6 +278,9 @@ class ScaffoldEngineV1:
             "badge",
             "separator",
             "tabs",
+            "drawer",
+            "popover",
+
         ]
 
         self.addElectronUpdater = True
